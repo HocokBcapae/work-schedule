@@ -1,0 +1,67 @@
+@import "tailwindcss";
+
+:root {
+  /* Тёмная тема по умолчанию (Графитовый космос + Кислотный лайм) */
+  --bg-base: #0a0a0c;
+  --bg-surface: #121216;
+  --text-main: #f4f4f6;
+  --text-muted: #71717a;
+  --border-color: #27272a;
+  --accent-lime: #ccff00;
+  --accent-orange: #ff3300;
+  --accent-text: #09090b;
+}
+
+/* Белая лабораторная тема в стиле синематиков Marathon */
+[data-theme="lab"] {
+  --bg-base: #f0f0f2;
+  --bg-surface: #e4e4e7;
+  --text-main: #09090b;
+  --text-muted: #71717a;
+  --border-color: #d4d4d8;
+  --accent-lime: #ff3300; /* В светлой теме основной акцент - сигнальный оранжевый */
+  --accent-orange: #0033ff; /* Дополнительный - электрический синий */
+  --accent-text: #ffffff;
+}
+
+body {
+  background-color: var(--bg-base);
+  color: var(--text-main);
+  font-family: "Inter", sans-serif;
+  overflow-x: hidden;
+  margin: 0;
+  /* Рваный, резкий переход при смене темы */
+  transition:
+    background-color 0.1s steps(2),
+    color 0.1s steps(2);
+}
+
+.font-mono-tech {
+  font-family: "JetBrains Mono", monospace;
+}
+
+/* Скошенный правый нижний угол для кнопок и карточек */
+.clip-corner {
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% calc(100% - 18px),
+    calc(100% - 18px) 100%,
+    0 100%
+  );
+}
+
+/* Эффект хроматической аберрации (Альберто Мьельго) при наведении */
+.mielgo-glitch:hover {
+  text-shadow:
+    -2px 0 #ff3300,
+    2px 0 #00e5ff;
+}
+
+/* Тонкая техническая сетка на фоне */
+.bg-tech-grid {
+  background-size: 40px 40px;
+  background-image:
+    linear-gradient(to right, var(--border-color) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--border-color) 1px, transparent 1px);
+}
