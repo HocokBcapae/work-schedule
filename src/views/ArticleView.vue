@@ -247,14 +247,13 @@
             </figcaption>
           </figure>
 
-          <!-- МУЛЬТИ-ФОТО ТЕРМИНАЛ (!GALLERY: до 10-20 фоток рядом с контекстом или перед блоком) -->
+          <!-- МУЛЬТИ-ФОТО ТЕРМИНАЛ (!GALLERY:) -->
           <div
             v-else-if="
               block.type === 'gallery' && block.images && block.images.length
             "
             class="my-8 border border-[var(--border-color)] bg-[var(--bg-surface)] p-3 sm:p-5 clip-corner"
           >
-            <!-- Верхняя шапка галереи с переключателем СЛАЙДЕР / СЕТКА -->
             <div
               class="flex flex-wrap items-center justify-between gap-2 pb-3 mb-4 border-b border-[var(--border-color)] font-mono-tech text-xs"
             >
@@ -283,7 +282,6 @@
               </button>
             </div>
 
-            <!-- Сплит-режим: Если есть текст после ---, ставим Текст и Фото РЯДОМ (на мобилке фото сверху, текст снизу) -->
             <div
               class="grid grid-cols-1 gap-6 items-start"
               :class="
@@ -292,7 +290,6 @@
                   : ''
               "
             >
-              <!-- БЛОК ВИЗУАЛА (Слайдер или Сетка) -->
               <div
                 :class="
                   block.lines &&
@@ -302,7 +299,6 @@
                     : 'w-full'
                 "
               >
-                <!-- РЕЖИМ 1: ТЕРМИНАЛ-СЛАЙДЕР (компактный, не растягивает страницу) -->
                 <div v-if="galleryMode[idx] !== 'grid'">
                   <div
                     class="relative bg-black border border-[var(--border-color)] aspect-video overflow-hidden group"
@@ -315,7 +311,6 @@
                       class="w-full h-full object-cover cursor-zoom-in"
                     />
 
-                    <!-- Штамп номера кадра поверх фото -->
                     <div
                       class="absolute top-2 left-2 px-2 py-0.5 bg-black/80 border border-[var(--border-color)] font-mono-tech text-[10px] text-[var(--accent-lime)]"
                     >
@@ -324,7 +319,6 @@
                       {{ block.images.length }} ]
                     </div>
 
-                    <!-- Кнопки листания влево/вправо -->
                     <div
                       class="absolute inset-x-2 bottom-2 flex justify-between items-center pointer-events-none"
                     >
@@ -351,7 +345,6 @@
                     </div>
                   </div>
 
-                  <!-- Подпись к текущему выбранному фото -->
                   <div
                     class="mt-2 font-mono-tech text-xs text-[var(--text-main)] bg-[var(--bg-base)] px-3 py-2 border border-[var(--border-color)]"
                   >
@@ -361,7 +354,6 @@
                     <span>{{ block.images[getGalleryIdx(idx)].caption }}</span>
                   </div>
 
-                  <!-- Матрица миниатюр (для быстрого переключения между 10 фотками) -->
                   <div class="grid grid-cols-5 sm:grid-cols-8 gap-1.5 mt-2.5">
                     <button
                       v-for="(img, imgIdx) in block.images"
@@ -388,7 +380,6 @@
                   </div>
                 </div>
 
-                <!-- РЕЖИМ 2: СЕТКА ВСЕХ ФОТОГРАФИЙ СРАЗУ -->
                 <div v-else class="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   <div
                     v-for="(img, imgIdx) in block.images"
@@ -417,7 +408,6 @@
                 </div>
               </div>
 
-              <!-- ТЕКСТ-КОНТЕКСТ РЯДОМ С ФОТОГРАФИЯМИ (если добавлен через ---) -->
               <div
                 v-if="block.lines && block.lines.length"
                 :class="
@@ -443,47 +433,83 @@
         </template>
       </article>
 
-      <!-- ПРАВАЯ КОЛОНКА (ПК): Динамическое оглавление-радар -->
+      <!-- ПРАВАЯ КОЛОНКА (ПК): Прокручиваемое оглавление с авто-центровкой активной темы -->
       <aside class="hidden lg:block lg:col-span-4">
         <div
-          class="sticky top-20 border border-[var(--border-color)] bg-[var(--bg-surface)] p-5 clip-corner"
+          @mouseenter="isHoveringToc = true"
+          @mouseleave="isHoveringToc = false"
+          class="sticky top-20 max-h-[calc(100vh-6.5rem)] flex flex-col border border-[var(--border-color)] bg-[var(--bg-surface)] p-5 clip-corner"
         >
-          <div
-            class="flex justify-between items-center font-mono-tech text-xs pb-3 border-b border-[var(--border-color)]"
-          >
-            <span class="font-bold text-[var(--text-main)]"
-              >НАВИГАЦИЯ // РАДАР</span
-            >
-            <span class="text-[var(--accent-lime)]">{{ scrollProgress }}%</span>
-          </div>
-
-          <div class="w-full h-1 bg-[var(--bg-base)] my-3 overflow-hidden">
+          <!-- Верхняя фиксированная часть радара -->
+          <div class="shrink-0">
             <div
-              class="h-full bg-[var(--accent-lime)] transition-all duration-75"
-              :style="{ width: `${scrollProgress}%` }"
-            ></div>
+              class="flex justify-between items-center font-mono-tech text-xs pb-3 border-b border-[var(--border-color)]"
+            >
+              <span class="font-bold text-[var(--text-main)]"
+                >НАВИГАЦИЯ // РАДАР</span
+              >
+              <span class="text-[var(--accent-lime)] font-bold"
+                >{{ scrollProgress }}%</span
+              >
+            </div>
+
+            <!-- Полоска прогресса чтения -->
+            <div class="w-full h-1 bg-[var(--bg-base)] my-3 overflow-hidden">
+              <div
+                class="h-full bg-[var(--accent-lime)] transition-all duration-75"
+                :style="{ width: `${scrollProgress}%` }"
+              ></div>
+            </div>
           </div>
 
-          <nav class="space-y-1.5 mt-4 font-mono-tech text-xs">
+          <!-- ПРОКРУЧИВАЕМЫЙ СПИСОК РАЗДЕЛОВ (Не улетает за экран, держит активный пункт в центре) -->
+          <nav
+            ref="tocNavRef"
+            class="relative flex-1 overflow-y-auto pr-2 my-1 space-y-1.5 font-mono-tech text-xs toc-scrollbar"
+          >
             <a
-              v-for="heading in tocHeadings"
+              v-for="(heading, hIdx) in tocHeadings"
               :key="heading.id"
+              :data-toc-id="heading.id"
               :href="`#${heading.id}`"
               @click.prevent="scrollToSection(heading.id)"
-              class="block py-1.5 px-2.5 transition-colors duration-75 border-l-2"
+              class="block py-2 px-2.5 transition-all duration-75 border-l-2 leading-snug"
               :class="[
                 heading.level === 3 ? 'ml-3 text-[11px]' : '',
                 activeHeadingId === heading.id
-                  ? 'border-[var(--accent-lime)] bg-[var(--accent-lime)]/10 text-[var(--accent-lime)] font-bold'
-                  : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-main)]',
+                  ? 'border-[var(--accent-lime)] bg-[var(--accent-lime)]/15 text-[var(--accent-lime)] font-bold'
+                  : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-main)] hover:border-[var(--border-color)]',
               ]"
             >
-              <span v-if="activeHeadingId === heading.id" class="mr-1"
-                >-&gt;</span
-              >
-              {{ heading.text }}
+              <div class="flex items-start justify-between gap-2">
+                <span>
+                  <span v-if="activeHeadingId === heading.id" class="mr-1"
+                    >-&gt;</span
+                  >
+                  {{ heading.text }}
+                </span>
+                <span
+                  v-if="activeHeadingId === heading.id"
+                  class="shrink-0 text-[9px] px-1 bg-[var(--accent-lime)] text-[var(--accent-text)] font-bold"
+                >
+                  ACTIVE
+                </span>
+                <span v-else class="shrink-0 text-[10px] opacity-40">
+                  {{ String(hIdx + 1).padStart(2, "0") }}
+                </span>
+              </div>
             </a>
           </nav>
+
+          <!-- Нижняя фиксированная плашка радара -->
+          <div
+            class="shrink-0 mt-3 pt-3 border-t border-[var(--border-color)] font-mono-tech text-[10px] text-[var(--text-muted)] flex justify-between items-center"
+          >
+            <span>LOCK: AUTO-CENTER</span>
+            <span
+              >УЗЛОВ: {{ String(tocHeadings.length).padStart(2, "0") }}</span
+            >
+          </div>
         </div>
       </aside>
     </div>
@@ -516,18 +542,22 @@
           class="shrink-0 px-3 py-2 bg-[var(--text-main)] text-[var(--bg-base)] font-bold uppercase text-[11px]"
         >
           {{
-            mobileTocOpen ? "[ ЗАКРЫТЬ ]" : `[ ТЕМЫ: 0${tocHeadings.length} ]`
+            mobileTocOpen
+              ? "[ ЗАКРЫТЬ ]"
+              : `[ ТЕМЫ: ${String(tocHeadings.length).padStart(2, "0")} ]`
           }}
         </button>
       </div>
 
       <div
         v-if="mobileTocOpen"
-        class="border-t border-[var(--border-color)] bg-[var(--bg-base)] px-4 py-4 max-h-[60vh] overflow-y-auto space-y-2 font-mono-tech text-xs"
+        ref="mobileTocNavRef"
+        class="relative border-t border-[var(--border-color)] bg-[var(--bg-base)] px-4 py-4 max-h-[55vh] overflow-y-auto space-y-2 font-mono-tech text-xs toc-scrollbar"
       >
         <a
           v-for="heading in tocHeadings"
           :key="heading.id"
+          :data-mobile-toc-id="heading.id"
           :href="`#${heading.id}`"
           @click.prevent="
             scrollToSection(heading.id);
@@ -546,7 +576,7 @@
       </div>
     </div>
 
-    <!-- ПОЛНОЭКРАННЫЙ ОСМОТР ФОТО И ГАЛЕРЕЙ (LIGHTBOX С ЛИСТАНИЕМ) -->
+    <!-- ПОЛНОЭКРАННЫЙ ОСМОТР ФОТО И ГАЛЕРЕЙ (LIGHTBOX) -->
     <div
       v-if="lightboxList.length > 0"
       @click="closeLightbox"
@@ -606,7 +636,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from "vue";
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from "vue";
 import { useRoute } from "vue-router";
 import { articlesDatabase, type ArticleData } from "../data/articles";
 import { catalogData } from "../data/catalog";
@@ -616,6 +646,11 @@ const openSpoilers = ref<Record<number, boolean>>({});
 const activeHeadingId = ref<string>("");
 const scrollProgress = ref<number>(0);
 const mobileTocOpen = ref<boolean>(false);
+
+// Ссылки на прокручиваемые контейнеры меню (ПК и Мобилка)
+const tocNavRef = ref<HTMLElement | null>(null);
+const mobileTocNavRef = ref<HTMLElement | null>(null);
+const isHoveringToc = ref<boolean>(false);
 
 // Состояния для мульти-фото галерей (!GALLERY)
 const galleryActiveIdx = ref<Record<number, number>>({});
@@ -658,7 +693,6 @@ const stepLightbox = (dir: number) => {
   }
 };
 
-// Умная функция путей для фото: работает и локально, и на GitHub Pages
 const resolvePhotoUrl = (rawPath: string): string => {
   const clean = rawPath.trim();
   if (!clean) return "";
@@ -793,7 +827,6 @@ const parsedBlocks = computed<ParsedBlock[]>(() => {
       continue;
     }
 
-    // Мульти-фото галерея с контекстом !GALLERY: Заголовок ... !END
     if (line.startsWith("!GALLERY:")) {
       const title = line.slice(9).trim() || "ФОТО-АРХИВ УЗЛА";
       const images: PhotoItem[] = [];
@@ -827,7 +860,7 @@ const parsedBlocks = computed<ParsedBlock[]>(() => {
       }
 
       blocks.push({ type: "gallery", title, images, lines: contextLines });
-      i++; // пропускаем !END
+      i++;
       continue;
     }
 
@@ -921,14 +954,53 @@ const activeHeadingText = computed(() => {
   return found ? found.text : tocHeadings.value[0]?.text || "НАЧАЛО ДОКУМЕНТА";
 });
 
-const scrollToSection = (id: string) => {
-  const el = document.getElementById(id);
-  if (el) {
-    el.scrollIntoView({ behavior: "smooth", block: "start" });
-    activeHeadingId.value = id;
+// ФУНКЦИЯ АВТО-ЦЕНТРОВКИ АКТИВНОГО РАЗДЕЛА ВНУТРИ СПИСКА МЕНЮ
+const centerActiveTocItem = (force = false) => {
+  // На ПК центрируем, если мышка сейчас не крутит само меню вручную
+  if (tocNavRef.value && (!isHoveringToc.value || force)) {
+    const navEl = tocNavRef.value;
+    const activeEl = navEl.querySelector<HTMLElement>(
+      `[data-toc-id="${activeHeadingId.value}"]`,
+    );
+    if (activeEl) {
+      const targetScrollTop =
+        activeEl.offsetTop - navEl.clientHeight / 2 + activeEl.clientHeight / 2;
+      navEl.scrollTo({
+        top: Math.max(0, targetScrollTop),
+        behavior: "smooth",
+      });
+    }
+  }
+
+  // На мобилке центрируем список при открытии меню
+  if (mobileTocNavRef.value) {
+    const mNavEl = mobileTocNavRef.value;
+    const mActiveEl = mNavEl.querySelector<HTMLElement>(
+      `[data-mobile-toc-id="${activeHeadingId.value}"]`,
+    );
+    if (mActiveEl) {
+      const targetScrollTop =
+        mActiveEl.offsetTop -
+        mNavEl.clientHeight / 2 +
+        mActiveEl.clientHeight / 2;
+      mNavEl.scrollTo({
+        top: Math.max(0, targetScrollTop),
+        behavior: "smooth",
+      });
+    }
   }
 };
 
+const scrollToSection = (id: string) => {
+  const el = document.getElementById(id);
+  if (el) {
+    activeHeadingId.value = id;
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+    centerActiveTocItem(true);
+  }
+};
+
+// Следим за положением чтения на странице
 const handleScroll = () => {
   const docHeight = document.documentElement.scrollHeight - window.innerHeight;
   if (docHeight > 0) {
@@ -938,16 +1010,40 @@ const handleScroll = () => {
     );
   }
 
+  // Если докрутили почти до самого низа страницы — подсвечиваем последний раздел
+  if (
+    docHeight > 0 &&
+    window.scrollY >= docHeight - 30 &&
+    tocHeadings.value.length > 0
+  ) {
+    activeHeadingId.value = tocHeadings.value[tocHeadings.value.length - 1].id;
+    return;
+  }
+
+  const triggerLine = window.innerHeight * 0.28;
   for (const h of tocHeadings.value) {
     const el = document.getElementById(h.id);
     if (el) {
       const rect = el.getBoundingClientRect();
-      if (rect.top <= 160) {
+      if (rect.top <= triggerLine) {
         activeHeadingId.value = h.id;
       }
     }
   }
 };
+
+// Как только сменилась активная глава при скролле статьи — центрируем её в меню справа!
+watch(activeHeadingId, () => {
+  centerActiveTocItem();
+});
+
+// При открытии мобильного меню тоже сразу центрируем активный пункт
+watch(mobileTocOpen, async (isOpen) => {
+  if (isOpen) {
+    await nextTick();
+    centerActiveTocItem(true);
+  }
+});
 
 onMounted(() => {
   if (tocHeadings.value.length > 0) {
@@ -969,3 +1065,19 @@ watch(
   },
 );
 </script>
+
+<style scoped>
+/* Тонкий фирменный скроллбар для меню навигации в стиле Marathon */
+.toc-scrollbar::-webkit-scrollbar {
+  width: 3px;
+}
+.toc-scrollbar::-webkit-scrollbar-track {
+  background: var(--bg-base);
+}
+.toc-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+}
+.toc-scrollbar:hover::-webkit-scrollbar-thumb {
+  background: var(--accent-lime);
+}
+</style>
