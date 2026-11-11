@@ -49,13 +49,13 @@
         <input
           v-model="searchQuery"
           type="text"
-          placeholder="Например: АКБ, OLED..."
+          placeholder="Например: АКБ, Mac, OLED..."
           class="w-full bg-[var(--bg-surface)] border border-[var(--border-color)] px-3.5 py-2.5 text-xs font-mono-tech text-[var(--text-main)] focus:outline-none focus:border-[var(--accent-lime)] transition-colors"
         />
       </div>
     </div>
 
-    <!-- Сетка категорий (АКБ, Дисплеи, Кабели и т.д.) -->
+    <!-- Сетка категорий (АКБ, Дисплеи, Кабели, Маки и т.д.) -->
     <div
       class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mt-2"
     >
@@ -75,7 +75,7 @@
           <span
             class="text-[var(--text-muted)] group-hover:text-[var(--accent-lime)]"
           >
-            [0{{ idx + 1 }}]
+            [{{ String(idx + 1).padStart(2, "0") }}]
           </span>
         </div>
 
@@ -93,12 +93,21 @@
           </p>
         </div>
 
-        <!-- Нижняя панель карточки -->
+        <!-- Нижняя панель карточки с АВТОМАТИЧЕСКИМ подсчетом тем -->
         <div
           class="pt-3 border-t border-[var(--border-color)] flex justify-between items-center font-mono-tech text-xs"
         >
-          <span class="text-[var(--text-muted)]">
-            ТЕМ ВНУТРИ: {{ cat.sectionsCount }}
+          <span
+            :class="
+              getTopicsCount(currentBrand.id, cat.id) > 0
+                ? 'text-[var(--text-muted)]'
+                : 'text-[var(--text-muted)]/50'
+            "
+          >
+            ТЕМ ВНУТРИ:
+            {{
+              String(getTopicsCount(currentBrand.id, cat.id)).padStart(2, "0")
+            }}
           </span>
           <span
             class="font-bold text-[var(--text-main)] group-hover:text-[var(--accent-lime)] flex items-center gap-1"
@@ -115,6 +124,7 @@
 import { ref, computed } from "vue";
 import { useRoute } from "vue-router";
 import { catalogData } from "../data/catalog";
+import { articlesDatabase } from "../data/articles";
 
 const route = useRoute();
 const searchQuery = ref("");
@@ -133,4 +143,15 @@ const filteredCategories = computed(() => {
       c.shortDesc.toLowerCase().includes(q),
   );
 });
+
+// АВТОМАТИЧЕСКИЙ ПОДСЧЕТ ТЕМ (# и ##) ВНУТРИ СТАТЬИ
+const getTopicsCount = (brandId: string, categoryId: string): number => {
+  const article = articlesDatabase[`${brandId}/${categoryId}`];
+  if (!article || !article.content) return 0;
+
+  return article.content.split("\n").filter((line) => {
+    const t = line.trim();
+    return t.startsWith("# ") || t.startsWith("## ");
+  }).length;
+};
 </script>

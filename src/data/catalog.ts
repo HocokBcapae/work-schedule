@@ -26,9 +26,36 @@ export const catalogData: BrandItem[] = [
         sectionsCount: 6,
       },
       {
+        id: "MacDisplays",
+        code: "VIS_MTX // 03",
+        title: "ДИСПЛЕИ И МАТРИЦЫ MACBOOK",
+        shortDesc:
+          "Super Retina XDR, структура OLED-пикселей, TrueTone, IC-микросхемы тачскрина.",
+        sectionsCount: 6,
+      },
+
+      {
+        id: "Macbatteries",
+        code: "VIS_MTX // 04",
+        title: "АККУМУЛЯТОРЫ MACBOOK",
+        shortDesc:
+          "Super Retina XDR, структура OLED-пикселей, TrueTone, IC-микросхемы тачскрина.",
+        sectionsCount: 6,
+      },
+
+      {
         id: "cables",
-        code: "IO_LINK // 03",
+        code: "IO_LINK // 05",
         title: "КАБЕЛИ И РАЗЪЕМЫ",
+        shortDesc:
+          "Контроллеры Tristar/Hydra, распиновка Lightning и переход на стандарт USB-C.",
+        sectionsCount: 4,
+      },
+
+      {
+        id: "chargers",
+        code: "IO_LINK // 06",
+        title: "БЛОКИ 5W, 20W, ПЕРЕМЕННОЙ МОЩНОСТИ",
         shortDesc:
           "Контроллеры Tristar/Hydra, распиновка Lightning и переход на стандарт USB-C.",
         sectionsCount: 4,
