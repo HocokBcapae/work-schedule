@@ -60,6 +60,15 @@ export const catalogData: BrandItem[] = [
           "Контроллеры Tristar/Hydra, распиновка Lightning и переход на стандарт USB-C.",
         sectionsCount: 4,
       },
+
+      {
+        id: "powerbanks",
+        code: "IO_LINK // 07",
+        title: "POWERBANKS",
+        shortDesc:
+          "Контроллеры Tristar/Hydra, распиновка Lightning и переход на стандарт USB-C.",
+        sectionsCount: 4,
+      },
     ],
   },
   {
