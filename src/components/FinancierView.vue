@@ -265,10 +265,10 @@ function findShift(workerId, dateStr) {
           </div>
           <div class="bg-zinc-950 p-2.5 rounded-lg border border-zinc-800/60">
             <span class="text-zinc-500 block">Смены периода:</span>
-            <span class="font-bold text-zinc-200 text-sm"
-              >{{ item.shiftsCount }} ({{ item.mainShiftsCount }} осн /
-              {{ item.koperShiftsCount }} коп)</span
-            >
+            <span class="font-bold text-zinc-200 text-sm">
+           {{ item.shiftsCount }} ({{ item.mainShiftsCount }} осн / {{ item.koperShiftsCount }} коп)
+           <span v-if="item.vacationDaysCount > 0" class="text-purple-300 text-xs block">+ 🏖 {{ item.vacationPaidDays }} опл. / {{ item.vacationZeroDays }} вых. отп.</span>
+         </span>
           </div>
           <div class="bg-zinc-950 p-2.5 rounded-lg border border-zinc-800/60">
             <span class="text-zinc-500 block">Условия:</span>
@@ -310,6 +310,7 @@ function findShift(workerId, dateStr) {
           class="px-2 py-0.5 rounded bg-orange-600/30 text-orange-200 border border-orange-500/50"
           >Копер</span
         >
+        <span class="px-2 py-0.5 rounded bg-purple-600/30 text-purple-200 border border-purple-500/50">🏖 Отпуск</span>
         <span class="text-zinc-500">🔒 Режим просмотра</span>
       </div>
 
@@ -361,23 +362,21 @@ function findShift(workerId, dateStr) {
               class="p-0.5 text-center border-r border-zinc-800/60"
               :class="day.isWeekend ? 'bg-zinc-900/30' : ''"
             >
-              <div
-                v-if="findShift(worker.id, day.dateStr)"
-                class="py-1 px-1 rounded text-[10px] font-bold border leading-tight"
-                :class="
-                  (findShift(worker.id, day.dateStr).shiftType ||
-                    findShift(worker.id, day.dateStr).shift_type) === 'koper'
-                    ? 'bg-orange-600/30 text-orange-200 border-orange-500/50'
-                    : 'bg-blue-600/30 text-blue-200 border-blue-500/50'
-                "
-              >
-                <div>
-                  {{ findShift(worker.id, day.dateStr).time || "10:00–20:00" }}
-                </div>
-                <div class="opacity-80">
-                  {{ findShift(worker.id, day.dateStr).hours || 10 }}ч
-                </div>
-              </div>
+             <div
+             v-if="findShift(worker.id, day.dateStr)"
+             class="py-1 px-1 rounded text-[10px] font-bold border leading-tight"
+             :class="(findShift(worker.id, day.dateStr).shiftType || findShift(worker.id, day.dateStr).shift_type) === 'vacation'
+               ? (Number(findShift(worker.id, day.dateStr).hours) === 0
+                 ? 'bg-purple-950/40 text-purple-300/80 border-purple-700/50 border-dashed'
+                 : 'bg-purple-600/30 text-purple-100 border-purple-500/60')
+               : (findShift(worker.id, day.dateStr).shiftType || findShift(worker.id, day.dateStr).shift_type) === 'koper'
+               ? 'bg-orange-600/30 text-orange-200 border-orange-500/50'
+               : 'bg-blue-600/30 text-blue-200 border-blue-500/50'"
+           >
+             <div v-if="(findShift(worker.id, day.dateStr).shiftType || findShift(worker.id, day.dateStr).shift_type) === 'vacation'">🏖 Отп</div>
+             <div v-else>{{ findShift(worker.id, day.dateStr).time || '10:00–20:00' }}</div>
+             <div class="opacity-80">{{ findShift(worker.id, day.dateStr).hours }}ч</div>
+           </div>
             </td>
           </tr>
         </tbody>

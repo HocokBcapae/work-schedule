@@ -18,8 +18,22 @@ import { supabase } from "../lib/supabase";
 import WorkerEditModal from "./WorkerEditModal.vue";
 import ShiftEditModal from "./ShiftEditModal.vue";
 import PayrollTable from "./PayrollTable.vue";
+import { assignVacationPeriod } from '../state/schedule'
+import VacationModal from './VacationModal.vue'
 
 dayjs.locale("ru");
+
+const showVacationModal = ref(false)
+async function handleAssignVacation(payload) {
+  await assignVacationPeriod(
+    payload.workerId,
+    payload.startDate,
+    payload.endDate,
+    payload.paidHours,
+    payload.autoZeroWeekends
+  )
+  showVacationModal.value = false
+}
 
 const currentMonth = ref(dayjs().startOf("month"));
 
@@ -205,6 +219,7 @@ async function saveWorkerChanges(updatedWorker) {
         >
           ←
         </button>
+        
         <h2
           class="text-base font-semibold capitalize min-w-[140px] text-center text-zinc-100"
         >
@@ -233,6 +248,13 @@ async function saveWorkerChanges(updatedWorker) {
         >
           {{ tpl.label }}
         </button>
+
+        <button
+  @click="showVacationModal = true"
+  class="px-3 py-1.5 rounded-lg bg-purple-600/30 hover:bg-purple-600/50 text-purple-200 border border-purple-500/60 font-semibold text-xs transition cursor-pointer"
+>
+  🏖 Назначить отпуск
+</button>
 
         <div
           class="flex items-center gap-1 bg-zinc-950 border rounded-lg px-2 py-1 transition"
@@ -389,51 +411,34 @@ async function saveWorkerChanges(updatedWorker) {
               ]"
             >
               <div
-                v-if="findShift(worker.id, day.dateStr)"
-                draggable="true"
-                @dragstart.stop="onShiftDragStart(worker.id, day.dateStr)"
-                @contextmenu.prevent.stop="
-                  openShiftEditor(
-                    findShift(worker.id, day.dateStr),
-                    worker.name,
-                  )
-                "
-                class="group py-1 px-1.5 rounded text-center select-none cursor-grab active:cursor-grabbing border transition relative"
-                :class="[
-                  hasDayOffWish(worker.id, day.dateStr)
-                    ? 'bg-red-900/80 border-2 border-red-500 text-red-100 ring-2 ring-red-500/50 shadow-md animate-pulse'
-                    : findShift(worker.id, day.dateStr).shiftType === 'koper'
-                      ? 'bg-orange-600/30 text-orange-200 border-orange-500/50 hover:bg-orange-600/50'
-                      : 'bg-blue-600/30 text-blue-200 border-blue-500/50 hover:bg-blue-600/50',
-                ]"
-                :title="
-                  hasDayOffWish(worker.id, day.dateStr)
-                    ? '⚠️ ВНИМАНИЕ: Сотрудник просил выходной!'
-                    : 'ПКМ — время смены'
-                "
-              >
-                <div
-                  class="text-[10px] font-bold leading-tight whitespace-nowrap tracking-tight"
-                >
-                  <span v-if="hasDayOffWish(worker.id, day.dateStr)">⚠️</span>
-                  {{ findShift(worker.id, day.dateStr).time || "10:00–20:00" }}
-                </div>
-                <div class="text-[10px] opacity-80 font-medium mt-0.5">
-                  {{ findShift(worker.id, day.dateStr).hours }}ч
-                </div>
-                <button
-                  type="button"
-                  @click.stop="
-                    openShiftEditor(
-                      findShift(worker.id, day.dateStr),
-                      worker.name,
-                    )
-                  "
-                  class="opacity-0 group-hover:opacity-100 absolute -top-1 -right-1 bg-zinc-900 border border-zinc-700 text-zinc-200 hover:text-white w-4 h-4 rounded-full flex items-center justify-center text-[9px] shadow-md transition"
-                >
-                  ✎
-                </button>
-              </div>
+             v-if="findShift(worker.id, day.dateStr)"
+             draggable="true"
+             @dragstart.stop="onShiftDragStart(worker.id, day.dateStr)"
+             @contextmenu.prevent.stop="openShiftEditor(findShift(worker.id, day.dateStr), worker.name)"
+             class="group py-1 px-1.5 rounded text-center select-none cursor-grab active:cursor-grabbing border transition relative"
+             :class="[
+               hasDayOffWish(worker.id, day.dateStr) && findShift(worker.id, day.dateStr).shiftType !== 'vacation'
+                 ? 'bg-red-900/80 border-2 border-red-500 text-red-100 ring-2 ring-red-500/50 shadow-md animate-pulse'
+                 : findShift(worker.id, day.dateStr).shiftType === 'vacation'
+                 ? (Number(findShift(worker.id, day.dateStr).hours) === 0
+                   ? 'bg-purple-950/40 text-purple-300/80 border-purple-700/60 border-dashed hover:bg-purple-950/70'
+                   : 'bg-purple-600/35 text-purple-100 border-purple-500/70 hover:bg-purple-600/50')
+                 : findShift(worker.id, day.dateStr).shiftType === 'koper'
+                 ? 'bg-orange-600/30 text-orange-200 border-orange-500/50 hover:bg-orange-600/50'
+                 : 'bg-blue-600/30 text-blue-200 border-blue-500/50 hover:bg-blue-600/50'
+             ]"
+             :title="hasDayOffWish(worker.id, day.dateStr) && findShift(worker.id, day.dateStr).shiftType !== 'vacation' ? '⚠️ ВНИМАНИЕ: Сотрудник просил выходной!' : 'ПКМ — изменить смену или отпуск'"
+           >
+             <div class="text-[10px] font-bold leading-tight whitespace-nowrap tracking-tight">
+               <span v-if="findShift(worker.id, day.dateStr).shiftType === 'vacation'">🏖 Отпуск</span>
+               <span v-else>
+                 <span v-if="hasDayOffWish(worker.id, day.dateStr)">⚠️</span>
+                 {{ findShift(worker.id, day.dateStr).time || '10:00–20:00' }}
+               </span>
+             </div>
+             <div class="text-[10px] opacity-85 font-semibold mt-0.5">{{ findShift(worker.id, day.dateStr).hours }}ч</div>
+             <button type="button" @click.stop="openShiftEditor(findShift(worker.id, day.dateStr), worker.name)" class="opacity-0 group-hover:opacity-100 absolute -top-1 -right-1 bg-zinc-900 border border-zinc-700 text-zinc-200 hover:text-white w-4 h-4 rounded-full flex items-center justify-center text-[9px] shadow-md transition">✎</button>
+           </div>
             </td>
           </tr>
         </tbody>
@@ -455,5 +460,7 @@ async function saveWorkerChanges(updatedWorker) {
       @save="saveShiftDetails"
       @delete="removeShift"
     />
+
+    <VacationModal :show="showVacationModal" :workers="activeWorkers" @close="showVacationModal = false" @save="handleAssignVacation" />
   </div>
 </template>

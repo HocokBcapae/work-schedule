@@ -6,6 +6,7 @@ export const shifts = ref([]);
 export const wishes = ref([]);
 export const swapRequests = ref([]);
 export const isLoading = ref(false);
+import dayjs from 'dayjs'
 
 // Загрузка всех данных из Supabase
 export async function loadInitialData() {
@@ -51,7 +52,7 @@ export async function loadInitialData() {
         userId: s.user_id,
         date: s.date,
         time: s.time || "10:00–20:00",
-        hours: Number(s.hours) || 10,
+        hours: s.hours !== null && s.hours !== undefined ? Number(s.hours) : 10,
         shiftType: s.shift_type || "main",
       }));
     }
@@ -283,5 +284,58 @@ export async function toggleWish(userId, dateStr) {
       wishes.value = wishes.value.filter((w) => w.id !== wishId);
       alert("Ошибка сохранения выходного: " + error.message);
     }
+  }
+}
+
+
+// Массовое назначение отпуска периодом (например, неделя: 5 опл. + 2 Отп 0ч)
+export async function assignVacationPeriod(userId, startDateStr, endDateStr, paidHours = 10, autoZeroWeekends = true) {
+  let day = dayjs(startDateStr)
+  const end = dayjs(endDateStr)
+  if (!day.isValid() || !end.isValid() || day.isAfter(end)) return
+
+  const toInsert = []
+  const toUpdate = []
+  let idx = 0
+
+  while (day.isBefore(end) || day.isSame(end, 'day')) {
+    const dateStr = day.format('YYYY-MM-DD')
+    const isWeekend = day.day() === 0 || day.day() === 6
+    const dayHours = (autoZeroWeekends && isWeekend) ? 0 : Number(paidHours)
+    const timeLabel = dayHours === 0 ? 'Отп 0ч' : 'Отпуск'
+
+    const existing = getShift(userId, dateStr)
+    if (existing) {
+      existing.shiftType = 'vacation'
+      existing.hours = dayHours
+      existing.time = timeLabel
+      toUpdate.push({ id: existing.id, time: timeLabel, hours: dayHours, shift_type: 'vacation' })
+    } else {
+      const newId = `s_${Date.now()}_${idx}_${Math.random().toString(36).substring(2, 6)}`
+      const newShift = { id: newId, userId, date: dateStr, time: timeLabel, hours: dayHours, shiftType: 'vacation' }
+      shifts.value.push(newShift)
+      toInsert.push({ id: newId, user_id: userId, date: dateStr, time: timeLabel, hours: dayHours, shift_type: 'vacation' })
+    }
+
+    idx++
+    day = day.add(1, 'day')
+  }
+
+  try {
+    if (toInsert.length > 0) {
+      const { error } = await supabase.from('shifts').insert(toInsert)
+      if (error) throw error
+    }
+    if (toUpdate.length > 0) {
+      await Promise.all(
+        toUpdate.map(item =>
+          supabase.from('shifts').update({ time: item.time, hours: item.hours, shift_type: item.shift_type }).eq('id', item.id)
+        )
+      )
+    }
+  } catch (err) {
+    console.error('Ошибка назначения отпуска:', err)
+    alert('Ошибка сохранения отпуска: ' + err.message)
+    await loadInitialData()
   }
 }
